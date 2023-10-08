@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Tic Tac Toe</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <style>
+
+        .add-outline {
+            outline: 1px solid black;
+        }
+
+        .main-title {
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 38px;
+        }
+
+        .pa-settings {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            width: 300px;
+            margin: 0 auto;
+        }
+
+        .box {
+            width: 100px;
+            height: 100px;
+            /* border: 2px solid #333; */
+            /* background-color: red; */
+            background-color: #D3D3D3;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .symbol {
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        .restart {
+            display: flex;
+            justify-content: center;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="main-title text-center bg-light">Tic Tac Toe</div>
+    </header>
+    <main>
+        <h3 class="text-center mt-3" id="player-turn-text">Current Turn: <span id="current-player">Player 1 (X)</span></h3>
+        <div id="play-area" class="pa-settings mt-5"></div>
+        <div id="settings" class="restart my-5">
+            <button id="restart-btn" onclick="restartGame()" class="btn btn-warning text-white" style="border-radius: 25px; font-weight: bold;">Restart Game</button>
+        </div>
+    </main>
+
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">  
+            <strong class="me-auto">Tic Tac Toe</strong>
+            <small>Literally just now</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Game restarted.
+            </div>
+        </div>
+    </div>
+
+    <!-- Win Modal -->
+    <div class="modal fade" id="winModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h1 class="modal-title fs-3 text-center w-100" id="staticBackdropLabel">We Have A Winner!</h1>
+            <!-- <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+            </div>
+            <div class="modal-body text-center w-100">
+                <img src="./assets/winner.gif" class="mx-auto d-block" style="width:45%" alt="winner.gif">
+                Congratulations <strong>Player <span id="player-winner">1</span></strong>, you have won this game!
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+            <button type="button" onclick="dismissGame()" class="btn btn-danger rounded-pill" data-bs-dismiss="modal">Dismiss</button>
+            <button type="button" id="play-again-win" onclick="playAgain(this)" class="btn btn-warning text-white rounded-pill">Play Again</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Stalemate Modal -->
+    <div class="modal fade" id="stalemateModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h1 class="modal-title fs-3 text-center w-100" id="staticBackdropLabel">STALEMATE, Time Out!</h1>
+            </div>
+            <div class="modal-body text-center w-100">
+                <img src="./assets/stalemate.gif" class="mx-auto d-block mb-3" style="width:45%" alt="stalemate.gif">
+                Uh oh, looks like both players are equally as good. We're locked in a <strong>stalemate</strong>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+            <button type="button" onclick="dismissGame()" class="btn btn-danger rounded-pill" data-bs-dismiss="modal">Dismiss</button>
+            <button type="button" id="play-again-stalemate" onclick="playAgain(this)" class="btn btn-warning text-white rounded-pill">Play Again</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+       
+        var currentSymbol = 'X';
+        $(document).ready(function() {
+            triggerToast();
+            initPlayArea();
+        });
+
+        function triggerToast() {
+            const toastTrigger = document.getElementById('restart-btn');
+            const toastLiveExample = document.getElementById('liveToast');
+
+            if (toastTrigger) {
+                toastTrigger.addEventListener('click', () => {
+                    const toast = new bootstrap.Toast(toastLiveExample)
+                    toast.show()
+                })
+            }
+        }
+
+        function initPlayArea() {
+            $("#player-turn-text").show();
+            let playArea = $("#play-area");
+
+            for(let i = 0; i < 9; i++) {
+                let boxDiv = '<div class="box" onclick="updateBox(this)" id="box-'+ i +'"></div>';
+                playArea.append(boxDiv);     
+            }
+
+        }
+
+        function dismissGame() {
+            $("#player-turn-text").hide();
+            $(".box").prop('onclick', null);
+        }
+
+        function playAgain(button) {
+            let buttonId = $(button).attr('id');
+            if(buttonId === "play-again-win") {
+                $("#winModal").modal("hide");
+            } else {
+                $("#stalemateModal").modal("hide");
+            }
+            restartGame();
+        }
+
+        function restartGame() {
+            let playArea = $("#play-area");
+            playArea.html("");
+            currentSymbol = 'O';
+            updateSymbol();
+            initPlayArea();
+        }
+
+        function updateBox(box) {
+            let symbol = getSymbolStyle();
+            $(box).html(symbol);
+            updateSymbol();
+            verifyGameState();
+        }
+
+        function updateSymbol() {
+            let currentPlayer = 'Player 1 (X)';
+            switch(currentSymbol) {
+                case 'X':
+                    currentSymbol = 'O';
+                    currentPlayer = 'Player 2 (O)';
+                    break;
+                
+                case 'O':
+                    currentSymbol = 'X';
+                    currentPlayer = 'Player 1 (X)';
+                    break;
+            }
+            $("#current-player").html(currentPlayer);
+        }
+
+        function getSymbolStyle() {
+            let color = (currentSymbol === 'X') ? 'text-primary' : 'text-danger';
+            return '<span class="symbol '+ color +'">'+ currentSymbol + '</span>';
+        }
+
+        function hasWinner() {
+            const winMap = [
+                [0,1,2], [3,4,5], [6,7,8],
+                [0,3,6], [1,4,7], [2,5,8],
+                [0,4,8], [2,4,6]
+            ];
+
+            for(const win of winMap) {
+                const [index1, index2, index3] = win;
+                let box1 = $("#box-" + index1).text();
+                let box2 = $("#box-" + index2).text();
+                let box3 = $("#box-" + index3).text();
+
+                if(box1 && box1 == box2 && box1 == box3) {
+                    return box1;
+                }
+
+            }
+
+            return null;
+        }
+
+        function allBoxFilled() {
+            const allBoxes = $(".box");
+            for(const box of allBoxes) {
+                let boxText = $(box).text().trim();
+                if(!boxText) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function verifyGameState() {
+            // console.log("verifying");
+            let isAllBoxFilled = allBoxFilled();
+            let winner = hasWinner();
+
+            if(isAllBoxFilled && !winner) {
+                $("#stalemateModal").appendTo("body").modal("show");
+
+            } else if((!isAllBoxFilled && winner) || (isAllBoxFilled && winner)) {
+                let player = (winner === 'X') ? '1' : '2';
+                $('#player-winner').text(player);
+                $("#winModal").appendTo("body").modal("show");
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+</body>
+</html>
